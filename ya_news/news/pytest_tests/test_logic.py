@@ -1,119 +1,89 @@
 from http import HTTPStatus
-from pytest_django.asserts import assertRedirects, assertFormError
 
-from django.urls import reverse
+import pytest
+from pytest_django.asserts import assertRedirects, assertFormError
 
 from news.forms import BAD_WORDS, WARNING
 from news.models import Comment
 
 
-def test_user_can_create_comment(author_client, form_data, news, author):
-    url = reverse('news:detail', args=(news.pk,))
+FORM_DATA = {'text': 'Текст комментария'}
+
+
+def test_user_can_create_comment(
+    author_client, news, author, url_news_detail, url_to_comments
+):
     assertRedirects(
-        author_client.post(url, form_data),
-        (url + '#comments'),
-        msg_prefix='Пользователь должен направляться на блок комментариев.'
+        author_client.post(url_news_detail, FORM_DATA),
+        url_to_comments,
     )
-    assert Comment.objects.count() == 1, (
-        'Убедитесь, что авторизованный пользователь '
-        'может создать комментарий.'
-    )
+    assert Comment.objects.count() == 1
     new_comment = Comment.objects.get()
-    assert new_comment.text == form_data['text']
+    assert new_comment.text == FORM_DATA['text']
     assert new_comment.news == news
     assert new_comment.author == author
 
 
 def test_anonymous_user_cant_create_comment(
-    client, form_data, news_pk_for_args
+    client, url_news_detail
 ):
-    client.post(reverse('news:detail', args=news_pk_for_args), form_data)
-    assert Comment.objects.count() == 0, (
-        'Убедитесь, что анонимный пользователь не может '
-        'создать комментарий.'
-    )
+    client.post(url_news_detail, FORM_DATA)
+    assert Comment.objects.count() == 0
 
 
-def test_user_cant_use_bad_words(author_client, form_data, news_pk_for_args):
-    form_data['text'] = f'Текст {BAD_WORDS[0]}'
+@pytest.mark.parametrize(
+    'bad_word',
+    BAD_WORDS
+)
+def test_user_cant_use_bad_words(author_client, url_news_detail, bad_word):
     assertFormError(
-        author_client.post(
-            reverse('news:detail', args=news_pk_for_args), form_data
-        ),
+        author_client.post(url_news_detail, {'text': f'Текст {bad_word}'}),
         'form',
         'text',
-        errors=WARNING,
-        msg_prefix=(
-            'При попытке использовать запрещенные слова в комментарии '
-            'форма должна вернуть ошибку.'
-        )
+        errors=WARNING
     )
-    assert Comment.objects.count() == 0, (
-        'Убедитесь, что пользователь не может '
-        'использовать запрещенные слова в комментарии.'
-    )
+    assert Comment.objects.count() == 0
 
 
 def test_author_can_edit_comment(
-    author_client, form_data, comment, news_pk_for_args
+    author_client, comment, url_comment_edit, url_to_comments, news, author
 ):
     assertRedirects(
-        author_client.post(
-            reverse('news:edit', args=(comment.pk,)), form_data
-        ),
-        (reverse('news:detail', args=news_pk_for_args) + '#comments'),
-        msg_prefix=(
-            'После изменения комментария пользователь должен '
-            'быть перенаправлен на страницу новости к блоку комментариев.'
-        )
+        author_client.post(url_comment_edit, FORM_DATA),
+        url_to_comments
     )
     comment.refresh_from_db()
-    assert comment.text == form_data['text'], (
-        'Убедитесь, что пользователь может редактировать '
-        'свой комментарий.'
-    )
+    assert comment.text == FORM_DATA['text']
+    assert comment.news == news
+    assert comment.author == author
 
 
 def test_user_cant_edit_comment_of_another_user(
-    admin_client, form_data, comment
+    admin_client, comment, url_comment_edit
 ):
     assert admin_client.post(
-        reverse('news:edit', args=(comment.pk,)), form_data
-    ).status_code == HTTPStatus.NOT_FOUND, (
-        'При попытке редактировать чужой комментарий, '
-        'пользователь должен получить ошибку 404.'
-    )
-    assert comment.text == Comment.objects.get(id=comment.id).text, (
-        'Убедитесь, что пользователь не может редактировать '
-        'чужой комментарий.'
-    )
+        url_comment_edit, FORM_DATA
+    ).status_code == HTTPStatus.NOT_FOUND
+    comment_from_db = Comment.objects.get(id=comment.id)
+    assert comment.text == comment_from_db.text
+    assert comment.author == comment_from_db.author
+    assert comment.news == comment_from_db.news
 
 
 def test_author_can_delete_comment(
-    author_client, comment_pk_for_args, news_pk_for_args
+    author_client, url_comment_delete, url_to_comments
 ):
     assertRedirects(
-        author_client.post(reverse('news:delete', args=comment_pk_for_args)),
-        (reverse('news:detail', args=news_pk_for_args) + '#comments'),
-        msg_prefix=(
-            'Пользователь должен быть перенаправлен '
-            'на страницу новости к блоку комментариев.'
-        )
+        author_client.post(url_comment_delete),
+        url_to_comments
     )
-    assert Comment.objects.count() == 0, (
-        'Убедитесь, что пользователь может удалить свой комментарий.'
-    )
+    assert Comment.objects.count() == 0
 
 
 def test_user_cant_delete_comment_of_another_user(
-    admin_client, comment_pk_for_args
+    admin_client, url_comment_delete
 ):
     assert admin_client.post(
-        reverse('news:delete', args=comment_pk_for_args)
-    ).status_code == HTTPStatus.NOT_FOUND, (
-        'При попытке удалить чужой комментарий '
-        'пользователь должен получить ошибку 404.'
-    )
-    assert Comment.objects.count() == 1, (
-        'Комментарий чужого пользователя не должен удаляться.'
-    )
+        url_comment_delete
+    ).status_code == HTTPStatus.NOT_FOUND
+    assert Comment.objects.count() == 1

@@ -1,58 +1,39 @@
-import pytest
-
-from django.urls import reverse
-
+from news.forms import CommentForm
 from yanews import settings
 
 
-HOME_URL = reverse('news:home')
-
-
-@pytest.mark.usefixtures('news_list')
-def test_count_news(client):
+def test_count_news(client, news_list, url_home):
     assert len(
-        client.get(HOME_URL).context['object_list']
-    ) == settings.NEWS_COUNT_ON_HOME_PAGE, (
-        f'Количество новостей на домашней странице '
-        f'должно составлять {settings.NEWS_COUNT_ON_HOME_PAGE}.'
-    )
+        client.get(url_home).context['object_list']
+    ) == settings.NEWS_COUNT_ON_HOME_PAGE
 
 
-@pytest.mark.usefixtures('news_list')
-def test_news_order(client):
+def test_news_order(client, news_list, url_home):
     all_dates = [
-        object.date for object in client.get(HOME_URL).context['object_list']
+        object.date for object in client.get(url_home).context['object_list']
     ]
-    assert all_dates == sorted(all_dates, reverse=True), (
-        'Новости на домашней странице '
-        'должны быть отсортированы от новых к старым.'
-    )
+    assert all_dates == sorted(all_dates, reverse=True)
 
 
-@pytest.mark.usefixtures('comments')
-def test_comments_order(news_pk_for_args, client):
-    response = client.get(reverse('news:detail', args=news_pk_for_args))
+def test_comments_order(client, comments, url_news_detail):
+    response = client.get(url_news_detail)
     assert 'news' in response.context
-    all_comments = response.context['news'].comment_set.all()
-    assert all_comments[0].created < all_comments[1].created, (
-        'Комментарии должны быть отсортированы от старых к новым.'
-    )
+    all_comments_dates = [
+        comment.created for comment in
+        response.context['news'].comment_set.all()
+    ]
+    assert all_comments_dates == sorted(all_comments_dates)
 
 
-@pytest.mark.parametrize(
-    'parametrized_client, form_in_context',
-    (
-        (pytest.lazy_fixture('client'), False),
-        (pytest.lazy_fixture('admin_client'), True)
-    )
-)
-def test_form_availability_for_different_users(
-    parametrized_client, form_in_context, news_pk_for_args
+def test_form_unavailable_for_anounymous_user(
+        client, url_news_detail
 ):
-    response = parametrized_client.get(
-        reverse('news:detail', args=news_pk_for_args)
-    )
-    assert ('form' in response.context) is form_in_context, (
-        'Форма комментария должна быть доступна '
-        'только авторизованному пользователю.'
-    )
+    assert 'form' not in client.get(url_news_detail).context
+
+
+def test_form_available_for_authenticated_user(
+        admin_client, url_news_detail
+):
+    response = admin_client.get(url_news_detail)
+    assert 'form' in response.context
+    assert isinstance(response.context['form'], CommentForm)

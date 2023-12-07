@@ -7,76 +7,52 @@ from django.urls import reverse
 
 from notes.forms import WARNING
 from notes.models import Note
+from notes.tests import utils
 
 
-NOTE_TITLE = 'Название заметки'
-
-NOTE_TEXT = 'Текст заметки'
-
-NOTE_SLUG = 'note'
-
-URL_SUCCESS = reverse('notes:success')
-
-User = get_user_model()
+form_data = {
+    'title': 'Название заметки',
+    'text': 'Текст заметки',
+    'slug': 'new-note'
+}
 
 
-class TestNoteCreation(TestCase):
+class TestNoteCreation(utils.TestBase):
 
-    @classmethod
-    def setUpTestData(cls):
-        cls.form_data = {
-            'title': NOTE_TITLE,
-            'text': NOTE_TEXT,
-            'slug': NOTE_SLUG
-        }
-        cls.user = User.objects.create(username='Автор заметки')
-        cls.url_add_note = reverse('notes:add')
-        cls.user_client = Client()
-        cls.user_client.force_login(cls.user)
+    # CREATE_NOTE = False
+    
+    # @classmethod
+    # def setUpTestData(cls):
+    #     cls.form_data = {
+    #         'title': NOTE_TITLE,
+    #         'text': NOTE_TEXT,
+    #         'slug': NOTE_SLUG
+    #     }
+    #     cls.user = User.objects.create(username='Автор заметки')
+    #     cls.url_add_note = reverse('notes:add')
+    #     cls.user_client = Client()
+    #     cls.user_client.force_login(cls.user)
 
     def test_anonymous_user_cant_create_note(self):
-        self.client.post(self.url_add_note, data=self.form_data)
-        self.assertEqual(
-            Note.objects.count(),
-            0,
-            msg=(
-                'Убедитесь, что анонимный пользователь '
-                'не может создать заметку.'
-            )
-        )
+        notes_count = Note.objects.count()
+        self.client.post(utils.URL_NOTE_ADD, form_data)
+        self.assertEqual(notes_count, Note.objects.count())
 
     def test_authenticated_user_can_create_note(self):
         self.assertRedirects(
-            self.user_client.post(
-                self.url_add_note, data=self.form_data
-            ),
-            URL_SUCCESS,
-            msg_prefix=(
-                f'После создания заметки пользователь должен '
-                f'перенаправляться на страницу {URL_SUCCESS}'
-            )
+            self.user_client.post(utils.URL_NOTE_ADD, data=form_data),
+            utils.URL_SUCCESS
         )
-        self.assertEqual(
-            Note.objects.count(),
-            1,
-            msg=(
-                'Убедитесь, что залогиненный пользователь '
-                'может создать заметку.'
-            )
-        )
+        self.assertEqual(Note.objects.count(), 1)
         note = Note.objects.get()
         for note_field, expected_value in (
-            (note.text, NOTE_TEXT),
-            (note.title, NOTE_TITLE),
-            (note.slug, NOTE_SLUG),
+            (note.text, form_data['text']),
+            (note.title, form_data['title']),
+            (note.slug, form_data['slug']),
             (note.author, self.user),
         ):
             with self.subTest(note_field=note_field):
-                self.assertEqual(
-                    note_field,
-                    expected_value,
-                    msg='Убедитесь, что заметка сохраняется корректно.'
-                )
+                self.assertEqual(note_field, expected_value)
 
     def test_user_cant_use_existing_slug(self):
         self.user_client.post(self.url_add_note, data=self.form_data)

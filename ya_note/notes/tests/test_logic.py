@@ -11,32 +11,34 @@ class TestNoteCreation(utils.TestBase):
 
     USE_FORM_DATA = True
 
-    def add_note(self, client):
-        return client.post(utils.URL_NOTE_ADD, self.form_data)
-
-    def test_anonymous_user_cant_create_note(self):
-        notes_count = Note.objects.count()
-        self.add_note(self.client)
-        self.assertEqual(notes_count, Note.objects.count())
-
-    def test_authenticated_user_can_create_note(self):
+    def add_note_successfully(self):
         notes_count = Note.objects.count()
         self.assertRedirects(
-            self.add_note(self.user_client),
+            self.user_client.post(utils.URL_NOTE_ADD, self.form_data),
             utils.URL_SUCCESS
         )
-        self.assertEqual((notes_count + 1), Note.objects.count())
+        self.assertEqual(notes_count + 1, Note.objects.count())
         note = Note.objects.all().last()
         self.assertEqual(note.text, self.form_data['text'])
         self.assertEqual(note.title, self.form_data['title'])
-        self.assertEqual(note.slug, self.form_data['slug'])
         self.assertEqual(note.author, self.user)
+        if 'slug' not in self.form_data.keys():
+            self.form_data['slug'] = slugify(self.form_data['title'])
+        self.assertEqual(note.slug, self.form_data['slug'])
+
+    def test_anonymous_user_cant_create_note(self):
+        notes_count = Note.objects.count()
+        self.client.post(utils.URL_NOTE_ADD, self.form_data)
+        self.assertEqual(notes_count, Note.objects.count())
+
+    def test_authenticated_user_can_create_note(self):
+        self.add_note_successfully()
 
     def test_user_cant_use_existing_slug(self):
         notes_count = Note.objects.count()
         self.form_data['slug'] = self.note.slug
         self.assertFormError(
-            self.add_note(self.user_client),
+            self.user_client.post(utils.URL_NOTE_ADD, self.form_data),
             form='form',
             field='slug',
             errors=self.form_data['slug'] + WARNING
@@ -44,17 +46,8 @@ class TestNoteCreation(utils.TestBase):
         self.assertEqual(notes_count, Note.objects.count())
 
     def test_empty_slug(self):
-        notes_count = Note.objects.count()
         self.form_data.pop('slug')
-        self.assertRedirects(
-            self.add_note(self.user_client),
-            utils.URL_SUCCESS
-        )
-        self.assertEqual((notes_count + 1), Note.objects.count())
-        self.assertEqual(
-            Note.objects.all().last().slug,
-            slugify(self.form_data['title'])
-        )
+        self.add_note_successfully()
 
     def test_author_can_delete_note(self):
         notes_count = Note.objects.count()

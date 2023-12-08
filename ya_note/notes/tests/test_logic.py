@@ -7,16 +7,8 @@ from notes.models import Note
 from notes.tests import utils
 
 
-form_data = {
-    'title': 'Название заметки',
-    'text': 'Текст заметки',
-    'slug': 'new-note'
-}
-
-
 class TestNoteCreation(utils.TestBase):
 
-    CREATE_NOTE = False
     USE_FORM_DATA = True
 
     def add_note(self, client):
@@ -41,13 +33,8 @@ class TestNoteCreation(utils.TestBase):
         self.assertEqual(note.author, self.user)
 
     def test_user_cant_use_existing_slug(self):
-        Note.objects.create(
-            title=self.form_data['title'],
-            text=self.form_data['text'],
-            slug=self.form_data['slug'],
-            author=self.author
-        )
         notes_count = Note.objects.count()
+        self.form_data['slug'] = self.note.slug
         self.assertFormError(
             self.add_note(self.user_client),
             form='form',
@@ -69,13 +56,6 @@ class TestNoteCreation(utils.TestBase):
             slugify(self.form_data['title'])
         )
 
-
-class TestNoteEditDelete(utils.TestBase):
-
-    NEW_NOTE_TEXT = 'Обновленный текст заметки'
-    CREATE_NOTE = True
-    USE_FORM_DATA = True
-
     def test_author_can_delete_note(self):
         notes_count = Note.objects.count()
         self.assertRedirects(
@@ -93,7 +73,6 @@ class TestNoteEditDelete(utils.TestBase):
         self.assertEqual(notes_count, Note.objects.count())
 
     def test_author_can_edit_note(self):
-        self.form_data['text'] = self.NEW_NOTE_TEXT
         self.assertRedirects(
             self.author_client.post(utils.URL_NOTE_EDIT, data=self.form_data),
             utils.URL_SUCCESS

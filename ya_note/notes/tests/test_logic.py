@@ -17,97 +17,66 @@ form_data = {
 }
 
 
+def request_note_post(client, url):
+    return client.post(url, TestNoteCreation.form_data)
+
+
 class TestNoteCreation(utils.TestBase):
 
-    # CREATE_NOTE = False
-    
-    # @classmethod
-    # def setUpTestData(cls):
-    #     cls.form_data = {
-    #         'title': NOTE_TITLE,
-    #         'text': NOTE_TEXT,
-    #         'slug': NOTE_SLUG
-    #     }
-    #     cls.user = User.objects.create(username='Автор заметки')
-    #     cls.url_add_note = reverse('notes:add')
-    #     cls.user_client = Client()
-    #     cls.user_client.force_login(cls.user)
+    CREATE_NOTE = False
+    USE_FORM_DATA = True
 
     def test_anonymous_user_cant_create_note(self):
         notes_count = Note.objects.count()
-        self.client.post(utils.URL_NOTE_ADD, form_data)
+        request_note_post(self.client, utils.URL_NOTE_ADD)
+        # self.client.post(utils.URL_NOTE_ADD, self.form_data)
         self.assertEqual(notes_count, Note.objects.count())
 
     def test_authenticated_user_can_create_note(self):
+        notes_count = Note.objects.count()
         self.assertRedirects(
-            self.user_client.post(utils.URL_NOTE_ADD, data=form_data),
+            request_note_post(self.user_client, utils.URL_NOTE_ADD),
+            # self.user_client.post(utils.URL_NOTE_ADD, data=self.form_data),
             utils.URL_SUCCESS
         )
-        self.assertEqual(Note.objects.count(), 1)
-        note = Note.objects.get()
-        for note_field, expected_value in (
-            (note.text, form_data['text']),
-            (note.title, form_data['title']),
-            (note.slug, form_data['slug']),
-            (note.author, self.user),
-        ):
-            with self.subTest(note_field=note_field):
-                self.assertEqual(note_field, expected_value)
+        self.assertEqual((notes_count + 1), Note.objects.count())
+        note = Note.objects.all().last()
+        self.assertEqual(note.text, self.form_data['text'])
+        self.assertEqual(note.title, self.form_data['title'])
+        self.assertEqual(note.slug, self.form_data['slug'])
+        self.assertEqual(note.author, self.user)
 
     def test_user_cant_use_existing_slug(self):
-        self.user_client.post(self.url_add_note, data=self.form_data)
-        self.assertEqual(
-            Note.objects.count(),
-            1,
-            msg=(
-                'Убедитесь, что залогиненный пользователь '
-                'может создать заметку.'
-            )
+        Note.objects.create(
+            title=self.form_data['title'],
+            text=self.form_data['text'],
+            slug=self.form_data['slug'],
+            author=self.author
         )
+        notes_count = Note.objects.count()
         self.assertFormError(
             self.user_client.post(
-                self.url_add_note, data=self.form_data
+                utils.URL_NOTE_ADD, data=self.form_data
             ),
             form='form',
             field='slug',
-            errors=NOTE_SLUG + WARNING,
-            msg_prefix=('При указании в форме неуникального '
-                        'слага, пользователь должен увидеть предупреждение.')
+            errors=self.form_data['slug'] + WARNING
         )
-        self.assertEqual(
-            Note.objects.count(),
-            1,
-            msg=('Если пользователь указал неуникальный слаг '
-                 'в форме, заметка не должна создаваться.')
-        )
+        self.assertEqual(notes_count, Note.objects.count())
 
     def test_empty_slug(self):
+        notes_count = Note.objects.count()
         self.form_data.pop('slug')
         self.assertRedirects(
             self.user_client.post(
-                reverse('notes:add'), data=self.form_data
+                utils.URL_NOTE_ADD, data=self.form_data
             ),
-            reverse('notes:success'),
-            msg_prefix=(
-                f'После создания заметки пользователь должен '
-                f'перенаправляться на страницу {URL_SUCCESS}'
-            )
+            utils.URL_SUCCESS
         )
+        self.assertEqual((notes_count + 1), Note.objects.count())
         self.assertEqual(
-            Note.objects.count(),
-            1,
-            (
-                'Убедитесь, что авторизованный пользователь '
-                'может создать заметку'
-            )
-        )
-        self.assertEqual(
-            Note.objects.get().slug,
-            slugify(self.form_data['title']),
-            (
-                'Если при создании заметки не заполнен slug, '
-                'он должен формироваться автоматически'
-            )
+            Note.objects.all().last().slug,
+            slugify(self.form_data['title'])
         )
 
 

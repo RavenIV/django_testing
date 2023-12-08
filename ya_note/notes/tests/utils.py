@@ -7,6 +7,10 @@ from notes.models import Note
 
 User = get_user_model()
 
+NOTE_TITLE = 'Заголовок'
+
+NOTE_TEXT = 'Текст заметки'
+
 NOTE_SLUG = 'test_note'
 
 URL_HOME = reverse('notes:home')
@@ -33,6 +37,7 @@ URL_NOTE_DELETE = reverse('notes:delete', args=(NOTE_SLUG,))
 class TestBase(TestCase):
 
     CREATE_NOTE = True
+    USE_FORM_DATA = False
 
     @classmethod
     def setUpTestData(cls):
@@ -44,8 +49,14 @@ class TestBase(TestCase):
         cls.user_client.force_login(cls.user)
         if cls.CREATE_NOTE:
             cls.note = Note.objects.create(
-                title='Заголовок',
-                text='Текст заметки',
+                title=NOTE_TITLE,
+                text=NOTE_TEXT,
                 slug=NOTE_SLUG,
                 author=cls.author
             )
+        if cls.USE_FORM_DATA:
+            cls.form_data = {
+                'title': NOTE_TITLE,
+                'text': NOTE_TEXT,
+                'slug': NOTE_SLUG
+            }

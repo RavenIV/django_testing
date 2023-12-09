@@ -38,7 +38,7 @@ class TestBase(TestCase):
         )
         if use_form_data:
             cls.form_data = {
-                'title': f'Заметка {id}',
+                'title': 'Заметка',
                 'text': 'Другой текст',
                 'slug': 'new_note'
             }

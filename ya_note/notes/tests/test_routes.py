@@ -1,43 +1,56 @@
 from http import HTTPStatus
 
-from notes.tests import utils
+from notes.tests.utils import (
+    TestBase,
+    URL_HOME,
+    URL_LOGIN,
+    URL_LOGOUT,
+    URL_SIGNUP,
+    URL_NOTE_ADD,
+    URL_SUCCESS,
+    URL_NOTES_LIST,
+    URL_NOTE_DETAIL,
+    URL_NOTE_EDIT,
+    URL_NOTE_DELETE,
+)
 
 
-class TestRoutes(utils.TestBase):
+class TestRoutes(TestBase):
 
     def test_pages_availability(self):
         for url, parametrized_client, expected_status in [
-            [utils.URL_HOME, self.client, HTTPStatus.OK],
-            [utils.URL_LOGIN, self.client, HTTPStatus.OK],
-            [utils.URL_LOGOUT, self.client, HTTPStatus.OK],
-            [utils.URL_SIGNUP, self.client, HTTPStatus.OK],
-            [utils.URL_NOTES_LIST, self.author_client, HTTPStatus.OK],
-            [utils.URL_NOTE_ADD, self.author_client, HTTPStatus.OK],
-            [utils.URL_SUCCESS, self.author_client, HTTPStatus.OK],
-            [utils.URL_NOTE_DETAIL, self.author_client, HTTPStatus.OK],
-            [utils.URL_NOTE_EDIT, self.author_client, HTTPStatus.OK],
-            [utils.URL_NOTE_DELETE, self.author_client, HTTPStatus.OK],
-            [utils.URL_NOTE_DETAIL, self.user_client, HTTPStatus.NOT_FOUND],
-            [utils.URL_NOTE_EDIT, self.user_client, HTTPStatus.NOT_FOUND],
-            [utils.URL_NOTE_DELETE, self.user_client, HTTPStatus.NOT_FOUND],
+            [URL_HOME, self.client, HTTPStatus.OK],
+            [URL_LOGIN, self.client, HTTPStatus.OK],
+            [URL_LOGOUT, self.client, HTTPStatus.OK],
+            [URL_SIGNUP, self.client, HTTPStatus.OK],
+            [URL_NOTES_LIST, self.author_client, HTTPStatus.OK],
+            [URL_NOTE_ADD, self.author_client, HTTPStatus.OK],
+            [URL_SUCCESS, self.author_client, HTTPStatus.OK],
+            [URL_NOTE_DETAIL, self.author_client, HTTPStatus.OK],
+            [URL_NOTE_EDIT, self.author_client, HTTPStatus.OK],
+            [URL_NOTE_DELETE, self.author_client, HTTPStatus.OK],
+            [URL_NOTE_DETAIL, self.user_client, HTTPStatus.NOT_FOUND],
+            [URL_NOTE_EDIT, self.user_client, HTTPStatus.NOT_FOUND],
+            [URL_NOTE_DELETE, self.user_client, HTTPStatus.NOT_FOUND],
         ]:
-            with self.subTest():
+            with self.subTest(
+                url=url,
+                parametrized_client=parametrized_client,
+                expected_status=expected_status
+            ):
                 self.assertEqual(
                     parametrized_client.get(url).status_code,
                     expected_status
                 )
 
     def test_redirect_for_anonymous_user(self):
-        for url in (
-            utils.URL_NOTE_ADD,
-            utils.URL_NOTE_EDIT,
-            utils.URL_NOTE_DELETE,
-            utils.URL_NOTE_DETAIL,
-            utils.URL_NOTES_LIST,
-            utils.URL_SUCCESS,
+        for url, url_to_login in (
+            (URL_NOTE_ADD, f'{URL_LOGIN}?next={URL_NOTE_ADD}'),
+            (URL_NOTE_EDIT, f'{URL_LOGIN}?next={URL_NOTE_EDIT}'),
+            (URL_NOTE_DELETE, f'{URL_LOGIN}?next={URL_NOTE_DELETE}'),
+            (URL_NOTE_DETAIL, f'{URL_LOGIN}?next={URL_NOTE_DETAIL}'),
+            (URL_NOTES_LIST, f'{URL_LOGIN}?next={URL_NOTES_LIST}'),
+            (URL_SUCCESS, f'{URL_LOGIN}?next={URL_SUCCESS}')
         ):
             with self.subTest(url=url):
-                self.assertRedirects(
-                    self.client.get(url),
-                    f'{utils.URL_LOGIN}?next={url}'
-                )
+                self.assertRedirects(self.client.get(url), url_to_login)

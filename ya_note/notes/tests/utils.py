@@ -8,34 +8,22 @@ from notes.models import Note
 User = get_user_model()
 
 NOTE_SLUG = 'test_note'
-
 URL_HOME = reverse('notes:home')
-
 URL_LOGIN = reverse('users:login')
-
 URL_LOGOUT = reverse('users:logout')
-
 URL_SIGNUP = reverse('users:signup')
-
 URL_NOTE_ADD = reverse('notes:add')
-
 URL_SUCCESS = reverse('notes:success')
-
 URL_NOTES_LIST = reverse('notes:list')
-
 URL_NOTE_DETAIL = reverse('notes:detail', args=(NOTE_SLUG,))
-
 URL_NOTE_EDIT = reverse('notes:edit', args=(NOTE_SLUG,))
-
 URL_NOTE_DELETE = reverse('notes:delete', args=(NOTE_SLUG,))
 
 
 class TestBase(TestCase):
 
-    USE_FORM_DATA = False
-
     @classmethod
-    def setUpTestData(cls):
+    def setUpTestData(cls, use_form_data=False):
         cls.author = User.objects.create(username='Автор заметки')
         cls.author_client = Client()
         cls.author_client.force_login(cls.author)
@@ -48,9 +36,9 @@ class TestBase(TestCase):
             slug=NOTE_SLUG,
             author=cls.author
         )
-        if cls.USE_FORM_DATA:
+        if use_form_data:
             cls.form_data = {
-                'title': 'Заметка',
-                'text': 'Текст заметки',
+                'title': f'Заметка {id}',
+                'text': 'Другой текст',
                 'slug': 'new_note'
             }

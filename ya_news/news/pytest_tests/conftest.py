@@ -1,10 +1,9 @@
 from datetime import datetime, timedelta
 
-import pytest
-
 from django.test.client import Client
 from django.urls import reverse
 from django.utils import timezone
+import pytest
 
 from news.models import Comment, News
 from yanews import settings
@@ -66,13 +65,6 @@ def comment(author, news):
 
 
 @pytest.fixture
-def form_data():
-    return {
-        'text': 'Текст комментария'
-    }
-
-
-@pytest.fixture
 def url_news_detail(news):
     return reverse('news:detail', args=(news.pk,))
 
@@ -110,3 +102,13 @@ def url_signup():
 @pytest.fixture
 def url_to_comments(url_news_detail):
     return url_news_detail + '#comments'
+
+
+@pytest.fixture
+def url_login_to_edit_comment(url_login, url_comment_edit):
+    return f'{url_login}?next={url_comment_edit}'
+
+
+@pytest.fixture
+def url_login_to_delete_comment(url_login, url_comment_delete):
+    return f'{url_login}?next={url_comment_delete}'

@@ -31,10 +31,7 @@ def test_anonymous_user_cant_create_comment(
     assert Comment.objects.count() == 0
 
 
-@pytest.mark.parametrize(
-    'bad_word',
-    BAD_WORDS
-)
+@pytest.mark.parametrize('bad_word', BAD_WORDS)
 def test_user_cant_use_bad_words(author_client, url_news_detail, bad_word):
     assertFormError(
         author_client.post(url_news_detail, {'text': f'Текст {bad_word}'}),
@@ -52,10 +49,10 @@ def test_author_can_edit_comment(
         author_client.post(url_comment_edit, FORM_DATA),
         url_to_comments
     )
-    comment.refresh_from_db()
-    assert comment.text == FORM_DATA['text']
-    assert comment.news == news
-    assert comment.author == author
+    comment_from_db = Comment.objects.get(id=comment.id)
+    assert comment_from_db.text == FORM_DATA['text']
+    assert comment_from_db.news == comment.news
+    assert comment_from_db.author == comment.author
 
 
 def test_user_cant_edit_comment_of_another_user(
@@ -81,9 +78,13 @@ def test_author_can_delete_comment(
 
 
 def test_user_cant_delete_comment_of_another_user(
-    admin_client, url_comment_delete
+    admin_client, url_comment_delete, comment
 ):
     assert admin_client.post(
         url_comment_delete
     ).status_code == HTTPStatus.NOT_FOUND
-    assert Comment.objects.count() == 1
+    assert comment in Comment.objects.all()
+    comment_from_db = Comment.objects.get(id=comment.id)
+    assert comment.text == comment_from_db.text
+    assert comment.author == comment_from_db.author
+    assert comment.news == comment_from_db.news

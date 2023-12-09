@@ -26,9 +26,15 @@ AUTHOR_CLIENT = pytest.lazy_fixture('author_client')
 
 ADMIN_CLIENT = pytest.lazy_fixture('admin_client')
 
+URL_LOGIN_TO_EDIT_COMMENT = pytest.lazy_fixture('url_login_to_edit_comment')
+
+URL_LOGIN_TO_DELETE_COMMENT = pytest.lazy_fixture(
+    'url_login_to_delete_comment'
+)
+
 
 @pytest.mark.parametrize(
-    'url, parametrized_client, expected_status',
+    'url, _client, status',
     (
         (URL_HOME, ANONYMOUS_CLIENT, HTTPStatus.OK),
         (URL_NEWS_DETAIL, ANONYMOUS_CLIENT, HTTPStatus.OK),
@@ -42,14 +48,16 @@ ADMIN_CLIENT = pytest.lazy_fixture('admin_client')
     )
 )
 def test_pages_availability_for_different_users(
-    url, parametrized_client, expected_status
+    url, _client, status
 ):
-    assert parametrized_client.get(url).status_code == expected_status
+    assert _client.get(url).status_code == status
 
 
 @pytest.mark.parametrize(
-    'url',
-    (URL_COMMENT_DELETE, URL_COMMENT_EDIT)
+    'url, url_to_login', (
+        (URL_COMMENT_DELETE, URL_LOGIN_TO_DELETE_COMMENT),
+        (URL_COMMENT_EDIT, URL_LOGIN_TO_EDIT_COMMENT)
+    )
 )
-def test_redirect_for_anonymous_user(url, client, url_login):
-    assertRedirects(client.get(url), f'{url_login}?next={url}')
+def test_redirect_for_anonymous_user(client, url, url_to_login):
+    assertRedirects(client.get(url), url_to_login)

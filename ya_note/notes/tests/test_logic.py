@@ -15,11 +15,6 @@ from notes.tests.utils import (
 
 class TestNoteCreation(TestBase):
 
-    @classmethod
-    def setUpTestData(cls, use_form_data=False):
-        use_form_data = True
-        return super().setUpTestData(use_form_data)
-
     def add_note_successfully(self):
         ids_before = {id[0] for id in Note.objects.values_list('id')}
         self.assertRedirects(

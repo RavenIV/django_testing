@@ -23,7 +23,7 @@ URL_NOTE_DELETE = reverse('notes:delete', args=(NOTE_SLUG,))
 class TestBase(TestCase):
 
     @classmethod
-    def setUpTestData(cls, use_form_data=False):
+    def setUpTestData(cls):
         cls.author = User.objects.create(username='Автор заметки')
         cls.author_client = Client()
         cls.author_client.force_login(cls.author)
@@ -36,9 +36,8 @@ class TestBase(TestCase):
             slug=NOTE_SLUG,
             author=cls.author
         )
-        if use_form_data:
-            cls.form_data = {
-                'title': 'Заметка',
-                'text': 'Другой текст',
-                'slug': 'new_note'
-            }
+        cls.form_data = {
+            'title': 'Заметка',
+            'text': 'Другой текст',
+            'slug': 'new_note'
+        }

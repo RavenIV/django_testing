@@ -35,5 +35,7 @@ def test_form_unavailable_for_anounymous_user(
 def test_form_available_for_authenticated_user(
         admin_client, url_news_detail
 ):
-    response = admin_client.get(url_news_detail)
-    assert isinstance(response.context.get('form'), CommentForm)
+    assert isinstance(
+        admin_client.get(url_news_detail).context.get('form'),
+        CommentForm
+    )

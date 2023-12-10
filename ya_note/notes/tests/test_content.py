@@ -1,5 +1,4 @@
 from notes.forms import NoteForm
-from notes.models import Note
 from notes.tests.utils import (
     TestBase, URL_NOTE_ADD, URL_NOTE_EDIT, URL_NOTES_LIST
 )

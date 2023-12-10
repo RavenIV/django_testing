@@ -7,27 +7,16 @@ from pytest_django.asserts import assertRedirects
 pytestmark = pytest.mark.django_db
 
 URL_HOME = pytest.lazy_fixture('url_home')
-
 URL_LOGIN = pytest.lazy_fixture('url_login')
-
 URL_LOGOUT = pytest.lazy_fixture('url_logout')
-
 URL_SIGNUP = pytest.lazy_fixture('url_signup')
-
 URL_NEWS_DETAIL = pytest.lazy_fixture('url_news_detail')
-
 URL_COMMENT_EDIT = pytest.lazy_fixture('url_comment_edit')
-
 URL_COMMENT_DELETE = pytest.lazy_fixture('url_comment_delete')
-
 ANONYMOUS_CLIENT = pytest.lazy_fixture('client')
-
 AUTHOR_CLIENT = pytest.lazy_fixture('author_client')
-
 ADMIN_CLIENT = pytest.lazy_fixture('admin_client')
-
 URL_LOGIN_TO_EDIT_COMMENT = pytest.lazy_fixture('url_login_to_edit_comment')
-
 URL_LOGIN_TO_DELETE_COMMENT = pytest.lazy_fixture(
     'url_login_to_delete_comment'
 )
@@ -54,10 +43,10 @@ def test_pages_availability_for_different_users(
 
 
 @pytest.mark.parametrize(
-    'url, url_to_login', (
-        (URL_COMMENT_DELETE, URL_LOGIN_TO_DELETE_COMMENT),
-        (URL_COMMENT_EDIT, URL_LOGIN_TO_EDIT_COMMENT)
+    'url, _client, url_redirect', (
+        (URL_COMMENT_DELETE, ANONYMOUS_CLIENT, URL_LOGIN_TO_DELETE_COMMENT),
+        (URL_COMMENT_EDIT, ANONYMOUS_CLIENT, URL_LOGIN_TO_EDIT_COMMENT)
     )
 )
-def test_redirect_for_anonymous_user(client, url, url_to_login):
-    assertRedirects(client.get(url), url_to_login)
+def test_redirect_for_anonymous_user(_client, url, url_redirect):
+    assertRedirects(_client.get(url), url_redirect)

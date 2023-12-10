@@ -10,14 +10,11 @@ class TestNotesListPage(TestBase):
     def test_notes_list_for_author(self):
         notes = self.author_client.get(URL_NOTES_LIST).context['object_list']
         self.assertIn(self.note, notes)
-        self.assertEqual(
-            len([note.id for note in notes if note.id == self.note.id]), 1
-        )
-        note_from_db = Note.objects.get(id=self.note.id)
-        self.assertEqual(note_from_db.title, self.note.title)
-        self.assertEqual(note_from_db.text, self.note.text)
-        self.assertEqual(note_from_db.slug, self.note.slug)
-        self.assertEqual(note_from_db.author, self.note.author)
+        self.assertEqual(len(notes), 1)
+        self.assertEqual(notes[0].title, self.note.title)
+        self.assertEqual(notes[0].text, self.note.text)
+        self.assertEqual(notes[0].slug, self.note.slug)
+        self.assertEqual(notes[0].author, self.note.author)
 
     def test_notes_list_for_another_user(self):
         self.assertNotIn(

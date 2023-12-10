@@ -44,13 +44,37 @@ class TestRoutes(TestBase):
                 )
 
     def test_redirect_for_anonymous_user(self):
-        for url, url_to_login in (
-            (URL_NOTE_ADD, f'{URL_LOGIN}?next={URL_NOTE_ADD}'),
-            (URL_NOTE_EDIT, f'{URL_LOGIN}?next={URL_NOTE_EDIT}'),
-            (URL_NOTE_DELETE, f'{URL_LOGIN}?next={URL_NOTE_DELETE}'),
-            (URL_NOTE_DETAIL, f'{URL_LOGIN}?next={URL_NOTE_DETAIL}'),
-            (URL_NOTES_LIST, f'{URL_LOGIN}?next={URL_NOTES_LIST}'),
-            (URL_SUCCESS, f'{URL_LOGIN}?next={URL_SUCCESS}')
+        for url, client, url_redirect in (
+            (
+                URL_NOTE_ADD,
+                self.client,
+                f'{URL_LOGIN}?next={URL_NOTE_ADD}'
+            ),
+            (
+                URL_NOTE_EDIT,
+                self.client,
+                f'{URL_LOGIN}?next={URL_NOTE_EDIT}'
+            ),
+            (
+                URL_NOTE_DELETE,
+                self.client,
+                f'{URL_LOGIN}?next={URL_NOTE_DELETE}'
+            ),
+            (
+                URL_NOTE_DETAIL,
+                self.client,
+                f'{URL_LOGIN}?next={URL_NOTE_DETAIL}'
+            ),
+            (
+                URL_NOTES_LIST,
+                self.client,
+                f'{URL_LOGIN}?next={URL_NOTES_LIST}'
+            ),
+            (
+                URL_SUCCESS,
+                self.client,
+                f'{URL_LOGIN}?next={URL_SUCCESS}'
+            )
         ):
             with self.subTest(url=url):
-                self.assertRedirects(self.client.get(url), url_to_login)
+                self.assertRedirects(client.get(url), url_redirect)

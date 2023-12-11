@@ -75,7 +75,7 @@ class TestNoteCreation(TestBase):
         )
         notes = Note.objects.filter(id=self.note.id)
         self.assertTrue(notes.exists())
-        note_from_db = notes.get(id=self.note.id)
+        note_from_db = notes.get()
         self.assertEqual(note_from_db.text, self.note.text)
         self.assertEqual(note_from_db.title, self.note.title)
         self.assertEqual(note_from_db.slug, self.note.slug)

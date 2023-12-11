@@ -85,7 +85,7 @@ def test_user_cant_delete_comment_of_another_user(
     ).status_code == HTTPStatus.NOT_FOUND
     comments = Comment.objects.filter(id=comment.id)
     assert comments.exists()
-    comment_from_db = comments.get(id=comment.id)
+    comment_from_db = comments.get()
     assert comment.text == comment_from_db.text
     assert comment.author == comment_from_db.author
     assert comment.news == comment_from_db.news
